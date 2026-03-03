@@ -21,6 +21,7 @@ import org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider
 import java.awt.event.KeyEvent
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -33,8 +34,8 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
 
     private val log = Logger.getInstance(ClaudeTerminalTabManager::class.java)
 
-    /** Maps Content to the canonical lowercase CWD of the tab. */
-    private val tabRegistry = ConcurrentHashMap<Content, String>()
+    /** Maps Content to (tabId, canonicalCwd) for each tab. */
+    private val tabRegistry = ConcurrentHashMap<Content, Pair<String, String>>()
 
     /** Tracks PTY processes so they can be killed on tab close. */
     private val tabProcesses = ConcurrentHashMap<Content, PtyProcess>()
@@ -45,6 +46,7 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
     fun createTerminalTab(toolWindow: ToolWindow, directory: String): Content? {
         val canonicalDir = File(directory).canonicalPath
         val tabName = File(canonicalDir).name
+        val tabId = UUID.randomUUID().toString()
 
         val tabDisposable = Disposer.newDisposable(this, "ClaudeTerminalTab:$tabName")
 
@@ -67,7 +69,7 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         content.isCloseable = true
         content.setDisposer(tabDisposable)
 
-        tabRegistry[content] = canonicalizePath(canonicalDir)
+        tabRegistry[content] = tabId to canonicalizePath(canonicalDir)
 
         // Intercept Escape so the IDE doesn't steal focus from the terminal.
         // Instead, forward the ESC byte to the PTY process.
@@ -104,7 +106,7 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         Disposer.register(tabDisposable) { disposed.set(true) }
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
-                val (connector, process) = createTtyConnector(canonicalDir)
+                val (connector, process) = createTtyConnector(canonicalDir, tabId)
                 tabProcesses[content] = process
                 ApplicationManager.getApplication().invokeLater {
                     if (!disposed.get()) {
@@ -122,10 +124,11 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         return content
     }
 
-    private fun createTtyConnector(workingDirectory: String): Pair<com.jediterm.terminal.TtyConnector, PtyProcess> {
+    private fun createTtyConnector(workingDirectory: String, tabId: String): Pair<com.jediterm.terminal.TtyConnector, PtyProcess> {
         val shell = getConfiguredShell()
         val env = System.getenv().toMutableMap()
         env["TERM"] = "xterm-256color"
+        env["CLAUDE_TERMINAL_TAB_ID"] = tabId
         // Strip Claude Code env vars so `claude` can be launched inside our terminal
         env.remove("CLAUDECODE")
         env.remove("CLAUDE_CODE")
@@ -172,8 +175,8 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         content.icon = null
     }
 
-    fun getAllTabs(): List<Pair<Content, String>> {
-        return tabRegistry.entries.map { it.key to it.value }
+    fun getAllTabs(): List<Triple<Content, String, String>> {
+        return tabRegistry.entries.map { Triple(it.key, it.value.first, it.value.second) }
     }
 
     override fun dispose() {

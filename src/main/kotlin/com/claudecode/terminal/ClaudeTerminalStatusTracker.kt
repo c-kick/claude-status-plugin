@@ -24,21 +24,30 @@ class ClaudeTerminalStatusTracker(private val project: Project) : Disposable {
         val sessions = monitor.sessions
         val now = System.currentTimeMillis() / 1000
 
-        val sessionStates = sessions.map { session ->
-            canonicalizePath(session.cwd) to session.effectiveState(now)
-        }
+        // Track which tabs have been matched by tab ID so we don't also CWD-match them
+        val tabIdMatchedSessions = mutableSetOf<String>()
 
-        for ((content, tabCwd) in tabManager.getAllTabs()) {
-            // Match sessions whose CWD is equal to or a subdirectory of the tab CWD.
-            // If multiple match, pick the one with the longest (most specific) CWD.
-            val match = sessionStates
-                .filter { (sessionCwd, _) ->
+        for ((content, tabId, tabCwd) in tabManager.getAllTabs()) {
+            // Priority 1: Match by tab ID (exact match to specific terminal tab)
+            val tabIdMatch = sessions.find { it.tabId == tabId }
+            if (tabIdMatch != null) {
+                tabManager.updateTabIcon(content, tabIdMatch.effectiveState(now))
+                tabIdMatchedSessions.add(tabIdMatch.sessionId)
+                continue
+            }
+
+            // Priority 2: Fall back to CWD matching, but only for sessions without a tab ID
+            // (or sessions whose tab ID didn't match any open tab)
+            val cwdMatch = sessions
+                .filter { it.sessionId !in tabIdMatchedSessions }
+                .filter { session ->
+                    val sessionCwd = canonicalizePath(session.cwd)
                     sessionCwd == tabCwd || sessionCwd.startsWith("$tabCwd\\") || sessionCwd.startsWith("$tabCwd/")
                 }
-                .maxByOrNull { (sessionCwd, _) -> sessionCwd.length }
+                .maxByOrNull { it.cwd.length }
 
-            if (match != null) {
-                tabManager.updateTabIcon(content, match.second)
+            if (cwdMatch != null) {
+                tabManager.updateTabIcon(content, cwdMatch.effectiveState(now))
             } else {
                 tabManager.clearTabIcon(content)
             }

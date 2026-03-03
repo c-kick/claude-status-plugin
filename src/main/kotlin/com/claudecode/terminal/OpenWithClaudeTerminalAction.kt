@@ -9,7 +9,7 @@ import com.intellij.openapi.wm.ToolWindowManager
  * Context menu action: "Open with Claude Terminal"
  * Opens a Claude Terminal tab at the selected directory.
  */
-class OpenWithClaudeTerminalAction : AnAction("Open with Claude Terminal") {
+class OpenWithClaudeTerminalAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

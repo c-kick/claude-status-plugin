@@ -1,7 +1,13 @@
 {
   "hooks": {
-    "SessionStart": [
+    "PreToolUse": [
       { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh working", "timeout": 5 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh working", "timeout": 5 }] }
+    ],
+    "SessionStart": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh idle", "timeout": 5 }] }
     ],
     "UserPromptSubmit": [
       { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh working", "timeout": 5 }] }

@@ -28,6 +28,7 @@ CWD=$(echo "${INPUT}" | node -e "
   });")
 
 STATE="${1:-unknown}"
+TAB_ID="${CLAUDE_TERMINAL_TAB_ID:-}"
 STATUS_FILE="${STATUS_DIR}/${SESSION_ID}.json"
 
 if [ "${STATE}" = "delete" ]; then rm -f "${STATUS_FILE}"; exit 0; fi
@@ -39,6 +40,7 @@ cat > "${TEMP_FILE}" << EOF
   "state": "${STATE}",
   "cwd": "${CWD}",
   "project": "$(basename "${CWD}")",
+  "tab_id": "${TAB_ID}",
   "timestamp": $(date +%s)
 }
 EOF

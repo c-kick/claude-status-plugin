@@ -31,7 +31,8 @@ data class ClaudeSession(
     val state: SessionState,
     val cwd: String,
     val project: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val tabId: String? = null
 ) {
     companion object {
         private const val STALE_THRESHOLD_SECONDS = 120L   // 2 minutes
@@ -55,10 +56,12 @@ data class ClaudeSession(
                 val project = obj.get("project")?.asString ?: ""
                 val timestamp = obj.get("timestamp")?.asLong ?: return null
 
+                val tabId = obj.get("tab_id")?.asString
+
                 val state = SessionState.fromJsonValue(stateStr) ?: return null
                 if (state == SessionState.STALE) return null // STALE is derived, not a valid input
 
-                ClaudeSession(sessionId, state, cwd, project, timestamp)
+                ClaudeSession(sessionId, state, cwd, project, timestamp, tabId)
             } catch (_: Exception) {
                 null
             }
