@@ -4,3 +4,7 @@ build/
 *.iml
 out/
 .intellijPlatform/
+# Claude Code context (contains credentials)
+CLAUDE.md
+token-debug.log
+.claude/
