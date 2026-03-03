@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh working", "timeout": 5 }] }
+    ],
+    "UserPromptSubmit": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh working", "timeout": 5 }] }
+    ],
+    "Stop": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh idle", "timeout": 5 }] }
+    ],
+    "Notification": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh waiting", "timeout": 5 }] }
+    ],
+    "SessionEnd": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/claude-status-tracker.sh delete", "timeout": 5 }] }
+    ]
+  }
+}

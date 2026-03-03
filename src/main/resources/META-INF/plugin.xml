@@ -1,0 +1,49 @@
+<idea-plugin>
+    <id>com.claudecode.status</id>
+    <name>Claude Code Status</name>
+    <version>1.0.0</version>
+    <vendor>Klaas Leussink</vendor>
+
+    <description><![CDATA[
+    Shows colored status dots on Claude Terminal tabs for active Claude Code sessions.
+    <ul>
+        <li><b>Red</b> = Claude is working</li>
+        <li><b>Orange</b> = Claude needs your input</li>
+        <li><b>Green</b> = Claude is idle/done</li>
+        <li><b>Gray</b> = Session may be stale</li>
+    </ul>
+    Provides a "Claude Terminal" tool window with tabbed terminals.
+    Reads status files written by Claude Code hooks from <code>~/.claude/terminal-status/</code>.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+            serviceImplementation="com.claudecode.status.ClaudeSessionMonitor"/>
+        <projectService
+            serviceImplementation="com.claudecode.terminal.ClaudeTerminalTabManager"/>
+        <projectService
+            serviceImplementation="com.claudecode.terminal.ClaudeTerminalStatusTracker"/>
+        <toolWindow
+            id="Claude Terminal"
+            anchor="bottom"
+            factoryClass="com.claudecode.terminal.ClaudeTerminalToolWindowFactory"
+            secondary="false"
+            canCloseContents="true"/>
+    </extensions>
+
+    <actions>
+        <action id="ClaudeTerminal.OpenWithClaudeTerminal"
+                class="com.claudecode.terminal.OpenWithClaudeTerminalAction"
+                text="Claude Terminal"
+                description="Open a Claude Terminal tab at this directory">
+            <add-to-group group-id="RevealGroup" anchor="last"/>
+        </action>
+        <action id="ClaudeTerminal.NewTab"
+                class="com.claudecode.terminal.ClaudeTerminalNewTabAction"
+                text="New Claude Terminal Tab"
+                description="Open a new tab in the Claude Terminal tool window"/>
+    </actions>
+</idea-plugin>
