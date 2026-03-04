@@ -23,6 +23,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -40,12 +41,15 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
     /** Tracks PTY processes so they can be killed on tab close. */
     private val tabProcesses = ConcurrentHashMap<Content, PtyProcess>()
 
+    /** Counter for disambiguating tab names with the same directory basename. */
+    private val tabNameCounts = ConcurrentHashMap<String, Int>()
+
     /**
      * Creates a new terminal tab in the given tool window at the specified directory.
      */
     fun createTerminalTab(toolWindow: ToolWindow, directory: String): Content? {
         val canonicalDir = File(directory).canonicalPath
-        val tabName = File(canonicalDir).name
+        val tabName = disambiguateTabName(canonicalDir)
         val tabId = UUID.randomUUID().toString()
 
         val tabDisposable = Disposer.newDisposable(this, "ClaudeTerminalTab:$tabName")
@@ -75,11 +79,11 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         // Instead, forward the ESC byte to the PTY process.
         DumbAwareAction.create {
             tabProcesses[content]?.let { process ->
-                if (process.isAlive) {
-                    try {
-                        process.outputStream.write(27) // ESC
-                        process.outputStream.flush()
-                    } catch (_: Exception) {}
+                try {
+                    process.outputStream.write(27) // ESC
+                    process.outputStream.flush()
+                } catch (e: Exception) {
+                    log.debug("Failed to forward ESC to PTY (process may have exited): ${e.message}")
                 }
             }
         }.registerCustomShortcutSet(
@@ -88,7 +92,9 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
             tabDisposable
         )
 
-        toolWindow.contentManager.addContentManagerListener(object : ContentManagerListener {
+        // Tie the listener lifecycle to the tab's disposable so it's cleaned up
+        // even if ContentManager is disposed without firing contentRemoved.
+        val listener = object : ContentManagerListener {
             override fun contentRemoved(event: ContentManagerEvent) {
                 if (event.content === content) {
                     tabRegistry.remove(content)
@@ -96,7 +102,13 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
                     toolWindow.contentManager.removeContentManagerListener(this)
                 }
             }
-        })
+        }
+        toolWindow.contentManager.addContentManagerListener(listener)
+        Disposer.register(tabDisposable) {
+            toolWindow.contentManager.removeContentManagerListener(listener)
+            tabRegistry.remove(content)
+            destroyProcess(content)
+        }
 
         toolWindow.contentManager.addContent(content)
         toolWindow.contentManager.setSelectedContent(content)
@@ -113,7 +125,7 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
                         widget.createTerminalSession(connector)
                         widget.start()
                     } else {
-                        process.destroyForcibly()
+                        destroyProcessGracefully(process)
                     }
                 }
             } catch (e: Exception) {
@@ -124,14 +136,36 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         return content
     }
 
+    /**
+     * Generates a unique tab name for the given directory.
+     * If a tab with the same basename already exists, appends the parent directory
+     * for disambiguation (e.g. "src" → "frontend/src").
+     */
+    private fun disambiguateTabName(canonicalDir: String): String {
+        val dirFile = File(canonicalDir)
+        val baseName = dirFile.name
+
+        // Check if any existing tab already has this base name
+        val existingWithSameName = tabRegistry.values.any { (_, cwd) ->
+            File(cwd).name.equals(baseName, ignoreCase = true)
+        }
+
+        return if (existingWithSameName) {
+            val parentName = dirFile.parentFile?.name ?: ""
+            if (parentName.isNotEmpty()) "$parentName/${baseName}" else baseName
+        } else {
+            baseName
+        }
+    }
+
     private fun createTtyConnector(workingDirectory: String, tabId: String): Pair<com.jediterm.terminal.TtyConnector, PtyProcess> {
         val shell = getConfiguredShell()
         val env = System.getenv().toMutableMap()
         env["TERM"] = "xterm-256color"
         env["CLAUDE_TERMINAL_TAB_ID"] = tabId
-        // Strip Claude Code env vars so `claude` can be launched inside our terminal
-        env.remove("CLAUDECODE")
-        env.remove("CLAUDE_CODE")
+        // Strip Claude Code env vars so `claude` can be launched inside our terminal.
+        // Remove all known prefixes to handle future additions.
+        env.keys.removeAll { it.startsWith("CLAUDECODE") || it.startsWith("CLAUDE_CODE") }
 
         val process = PtyProcessBuilder(arrayOf(shell))
             .setDirectory(workingDirectory)
@@ -145,11 +179,26 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
         return connector to process
     }
 
+    /**
+     * Gracefully shuts down a PTY process: SIGTERM first, then SIGKILL after timeout.
+     * This allows the shell to run cleanup traps and propagate signals to child
+     * processes (like running `claude` instances).
+     */
+    private fun destroyProcessGracefully(process: PtyProcess) {
+        if (!process.isAlive) return
+        try {
+            process.destroy() // SIGTERM
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                process.destroyForcibly() // SIGKILL after 3s
+            }
+        } catch (_: Exception) {
+            try { process.destroyForcibly() } catch (_: Exception) {}
+        }
+    }
+
     private fun destroyProcess(content: Content) {
         tabProcesses.remove(content)?.let { process ->
-            if (process.isAlive) {
-                process.destroyForcibly()
-            }
+            destroyProcessGracefully(process)
         }
     }
 
@@ -184,6 +233,7 @@ class ClaudeTerminalTabManager(private val project: Project) : Disposable {
             destroyProcess(content)
         }
         tabRegistry.clear()
+        tabNameCounts.clear()
     }
 
     companion object {

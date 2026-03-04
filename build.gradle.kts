@@ -15,7 +15,6 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.code.gson:gson:2.11.0")
     intellijPlatform {
         phpstorm("2024.3")
         bundledPlugin("org.jetbrains.plugins.terminal")
