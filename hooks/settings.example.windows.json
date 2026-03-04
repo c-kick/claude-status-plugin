@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" working", "timeout": 5 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" working", "timeout": 5 }] }
+    ],
+    "SessionStart": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" idle", "timeout": 5 }] }
+    ],
+    "UserPromptSubmit": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" working", "timeout": 5 }] }
+    ],
+    "Stop": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" idle", "timeout": 5 }] }
+    ],
+    "Notification": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" waiting", "timeout": 5 }] }
+    ],
+    "SessionEnd": [
+      { "matcher": "", "hooks": [{ "type": "command", "command": "powershell -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\claude-status-tracker.ps1\" delete", "timeout": 5 }] }
+    ]
+  }
+}

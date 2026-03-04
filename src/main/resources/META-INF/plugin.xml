@@ -21,7 +21,14 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService
+            serviceImplementation="com.claudecode.status.ClaudeStatusSettings"/>
+        <applicationService
             serviceImplementation="com.claudecode.status.ClaudeSessionMonitor"/>
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.claudecode.status.ClaudeStatusConfigurable"
+            id="com.claudecode.status.settings"
+            displayName="Claude Code Status"/>
         <projectService
             serviceImplementation="com.claudecode.terminal.ClaudeTerminalTabManager"/>
         <projectService
