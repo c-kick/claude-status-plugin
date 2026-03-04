@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.claudecode.status</id>
     <name>Claude Code Status</name>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <vendor>Klaas Leussink</vendor>
 
     <description><![CDATA[

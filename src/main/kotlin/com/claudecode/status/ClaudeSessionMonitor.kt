@@ -13,6 +13,7 @@ import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchKey
 import java.nio.file.WatchService
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Future
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
@@ -38,7 +39,7 @@ class ClaudeSessionMonitor : Disposable {
 
     private val scheduler = AppExecutorUtil.createBoundedScheduledExecutorService("ClaudeStatusPoller", 2)
     private var pollTask: ScheduledFuture<*>? = null
-    private var watchTask: ScheduledFuture<*>? = null
+    private var watchTask: Future<*>? = null
     private var watchService: WatchService? = null
     private var watchKey: WatchKey? = null
 
