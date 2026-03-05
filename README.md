@@ -34,13 +34,15 @@ The plugin reads status from Claude Code [hooks](https://docs.anthropic.com/en/d
 
 ### 1. Copy the hook script
 
+> **Note:** In the instructions, we assume the default path for Claude Core is in `~/.claude/hooks/`. If you use different paths, update accordingly.
+
+
+#### macOS/Linux/Windows (PowerShell)
 ```bash
 mkdir -p ~/.claude/hooks
 cp hooks/claude-status-tracker.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/claude-status-tracker.sh
+chmod +x ~/.claude/hooks/claude-status-tracker.sh  # macOS/Linux only — skip on Windows
 ```
-
-> **Note:** The default path is `~/.claude/hooks/`. If you keep it elsewhere, update the paths in step 2.
 
 ### 2. Configure Claude Code hooks
 
