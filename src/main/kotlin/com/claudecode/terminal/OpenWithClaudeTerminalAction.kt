@@ -1,15 +1,16 @@
 package com.claudecode.terminal
 
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.wm.ToolWindowManager
 
 /**
  * Context menu action: "Open with Claude Terminal"
  * Opens a Claude Terminal tab at the selected directory.
+ * Extends DumbAwareAction so it remains visible during IDE indexing.
  */
-class OpenWithClaudeTerminalAction : AnAction() {
+class OpenWithClaudeTerminalAction : DumbAwareAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return

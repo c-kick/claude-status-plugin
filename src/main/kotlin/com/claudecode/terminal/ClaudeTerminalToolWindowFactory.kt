@@ -1,5 +1,6 @@
 package com.claudecode.terminal
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -12,8 +13,11 @@ import com.intellij.openapi.wm.ToolWindowFactory
 class ClaudeTerminalToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        // Ensure the status tracker is initialized so it starts listening
-        ClaudeTerminalStatusTracker.getInstance(project)
+        // Set an explicit base icon (toolWindow.icon may be null before the UI is fully wired)
+        val baseIcon = toolWindow.icon ?: AllIcons.Nodes.Console
+        toolWindow.setIcon(baseIcon)
+        val tracker = ClaudeTerminalStatusTracker.getInstance(project)
+        tracker.baseToolWindowIcon = baseIcon
 
         // Add "+" button to the tool window title bar
         val newTabAction = ClaudeTerminalNewTabAction()
