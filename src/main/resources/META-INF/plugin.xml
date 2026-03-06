@@ -36,6 +36,7 @@
         <toolWindow
             id="Claude Terminal"
             anchor="bottom"
+            icon="AllIcons.Nodes.Console"
             factoryClass="com.claudecode.terminal.ClaudeTerminalToolWindowFactory"
             secondary="false"
             canCloseContents="true"/>

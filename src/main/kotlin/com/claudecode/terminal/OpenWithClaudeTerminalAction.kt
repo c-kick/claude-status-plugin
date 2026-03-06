@@ -1,5 +1,6 @@
 package com.claudecode.terminal
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.DumbAwareAction
@@ -11,6 +12,8 @@ import com.intellij.openapi.wm.ToolWindowManager
  * Extends DumbAwareAction so it remains visible during IDE indexing.
  */
 class OpenWithClaudeTerminalAction : DumbAwareAction() {
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
